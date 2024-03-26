@@ -16,7 +16,7 @@ namespace Challenging_Corruptors
         {
             // Plugin startup logic
             Log = Logger;
-            medsMinimumCorruptor = Config.Bind("General", "Minimum Corruptor Difficulty", 3, new ConfigDescription("1: easy (vanilla); 2: average; 3: hard; 4: extreme", new AcceptableValueRange<int>(1, 4)));
+            medsMinimumCorruptor = Config.Bind("General", "Minimum Corruptor Difficulty", 5, new ConfigDescription("1: easy (vanilla); 2: average; 3: hard; 4: extreme; 5: tabula rasa only o:", new AcceptableValueRange<int>(1, 5)));
             medsMinimumCorruptor.SettingChanged += (obj, args) => { Challenging_Corruptors.UpdateChallengeCorruptors(); };
             harmony.PatchAll();
             Logger.LogInfo($"Challenging Corruptors enabled!");
@@ -38,11 +38,21 @@ namespace Challenging_Corruptors
         public static void UpdateChallengeCorruptors()
         {
             Globals.Instance.CardListByType[Enums.CardType.Corruption] = new();
-            foreach (string cor in medsCorruptors)
+            if (Plugin.medsMinimumCorruptor.Value == 5)
             {
-                CardData card = Globals.Instance.GetCardData(cor);
-                if (card != (CardData)null && ((card.CardRarity == Enums.CardRarity.Common && Plugin.medsMinimumCorruptor.Value == 1) || (card.CardRarity == Enums.CardRarity.Uncommon && Plugin.medsMinimumCorruptor.Value <= 2) || (card.CardRarity == Enums.CardRarity.Rare && Plugin.medsMinimumCorruptor.Value <= 3) || (card.CardRarity == Enums.CardRarity.Epic)))
-                    Globals.Instance.CardListByType[Enums.CardType.Corruption].Add(cor);
+                Globals.Instance.CardListByType[Enums.CardType.Corruption].Add("windsofamnesia");
+                Globals.Instance.CardListByType[Enums.CardType.Corruption].Add("windsofamnesiaa");
+                Globals.Instance.CardListByType[Enums.CardType.Corruption].Add("windsofamnesiab");
+                Globals.Instance.CardListByType[Enums.CardType.Corruption].Add("windsofamnesiarare");
+            }
+            else
+            {
+                foreach (string cor in medsCorruptors)
+                {
+                    CardData card = Globals.Instance.GetCardData(cor);
+                    if (card != (CardData)null && ((card.CardRarity == Enums.CardRarity.Common && Plugin.medsMinimumCorruptor.Value == 1) || (card.CardRarity == Enums.CardRarity.Uncommon && Plugin.medsMinimumCorruptor.Value <= 2) || (card.CardRarity == Enums.CardRarity.Rare && Plugin.medsMinimumCorruptor.Value <= 3) || (card.CardRarity == Enums.CardRarity.Epic)))
+                        Globals.Instance.CardListByType[Enums.CardType.Corruption].Add(cor);
+                }
             }
         }
     }
