@@ -2,9 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
-    <AssemblyName>Challenging_Corruptors</AssemblyName>
+    <AssemblyName>com.stiffmeds.challengingcorruptors</AssemblyName>
     <Description>Allows you to choose the minimum difficulty of corruptors</Description>
-    <Version>1.1.0</Version>
+    <Version>1.2.0</Version>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <LangVersion>latest</LangVersion>
   </PropertyGroup>
@@ -20,15 +20,36 @@
     <PackageReference Include="Microsoft.NETFramework.ReferenceAssemblies" Version="1.0.2" PrivateAssets="all" />
   </ItemGroup>
   
-  <ItemGroup>
+  
+    <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>../../!libs/0Harmony.dll</HintPath>
+    </Reference>
     <Reference Include="Assembly-CSharp">
-      <HintPath>..\..\!libs\Assembly-CSharp.dll</HintPath>
+      <HintPath>../../!libs/Assembly-CSharp.dll</HintPath>
     </Reference>
-    <Reference Include="UnityEngine">
-      <HintPath>..\..\!libs\UnityEngine.dll</HintPath>
+    <Reference Include="Unity.TextMeshPro">
+      <HintPath>../../!libs/Unity.TextMeshPro.dll</HintPath>
     </Reference>
-    <Reference Include="UnityEngine.CoreModule">
-      <HintPath>..\..\!libs\UnityEngine.CoreModule.dll</HintPath>
+
+    <Reference Include="PhotonUnityNetworking">
+      <HintPath>../../!libs/PhotonUnityNetworking.dll</HintPath>
+    </Reference>
+    <Reference Include="PhotonRealtime">
+      <HintPath>../../!libs/PhotonRealtime.dll</HintPath>
+    </Reference>
+    <Reference Include="com.stiffmeds.obeliskialessentials">
+      <HintPath>../../!libs/com.stiffmeds.obeliskialessentials.dll</HintPath>
+    </Reference>
+    <Reference Include="com.stiffmeds.obeliskialcontent">
+      <HintPath>../../!libs/com.stiffmeds.obeliskialcontent.dll</HintPath>
     </Reference>
   </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="../../../plugins" />
+    <Copy SourceFiles="$(TargetPath)" DestinationFolder="Challenging_Corruptors/BepInEx/plugins" />
+    <Exec Command="/usr/bin/python3 &quot;$(ProjectDir)ship_mod.py&quot;" />
+  </Target>
+
 </Project>
