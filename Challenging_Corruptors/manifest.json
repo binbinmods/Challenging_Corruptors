@@ -1,0 +1,9 @@
+{
+    "name": "Challenging_Corruptors",
+    "version_number": "1.2.1",
+    "website_url": "https://github.com/binbinmods/Challenging_Corruptors",
+    "description": "Allows you to choose the minimum difficulty of corruptors..",
+    "dependencies": [
+        "BepInEx-BepInExPack_AcrossTheObelisk-5.4.23"
+	]
+}

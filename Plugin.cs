@@ -33,7 +33,7 @@ namespace Challenging_Corruptors
             string modName = "Challenging Corruptors";
             EnableMod = Config.Bind(new ConfigDefinition(modName, "EnableMod"), true, new ConfigDescription("Enables the mod. If false, the mod will not work then next time you load the game."));
             EnableDebugging = Config.Bind(new ConfigDefinition(modName, "EnableDebugging"), false, new ConfigDescription("Enables the debugging"));
-            medsMinimumCorruptor = Config.Bind("General", "Minimum Corruptor Difficulty", 5, new ConfigDescription("1: easy (vanilla); 2: average; 3: hard; 4: extreme; 5: tabula rasa only o:", new AcceptableValueRange<int>(1, 5)));
+            medsMinimumCorruptor = Config.Bind("General", "Minimum Corruptor Difficulty", 4, new ConfigDescription("1: easy (vanilla); 2: average; 3: hard; 4: extreme; 5: tabula rasa only o:", new AcceptableValueRange<int>(1, 5)));
             ForceUpwind = Config.Bind(new ConfigDefinition(modName, "ForceUpwind"), false, new ConfigDescription("Forces Upwind to always be an option for a corruptor."));
 
             medsMinimumCorruptor.SettingChanged += (obj, args) => { Challenging_Corruptors.UpdateChallengeCorruptors(); };
@@ -104,6 +104,13 @@ namespace Challenging_Corruptors
             }
             if (Plugin.ForceUpwind.Value)
             {
+                if (Plugin.medsMinimumCorruptor.Value == 4)
+                {
+                    MakeCardEpic("upwind");
+                    MakeCardEpic("upwinda");
+                    MakeCardEpic("upwindb");
+                    MakeCardEpic("upwindrare");
+                }
                 AddCorruptor("upwind");
             }
         }
@@ -121,6 +128,22 @@ namespace Challenging_Corruptors
             else
             {
                 Plugin.LogDebug($"Corruptor {corruptorID} already present");
+            }
+        }
+
+        public static void MakeCardEpic(string cardID)
+        {
+            CardData card = Globals.Instance.GetCardData(cardID);
+            Dictionary<string, CardData> allCards = Traverse.Create(Globals.Instance).Field("_Cards").GetValue<Dictionary<string, CardData>>();
+            Dictionary<string, CardData> allCardsSource = Traverse.Create(Globals.Instance).Field("_CardsSource").GetValue<Dictionary<string, CardData>>();
+            if (card != (CardData)null)
+            {
+                card.CardRarity = Enums.CardRarity.Epic;
+                allCards[cardID] = card;
+                allCardsSource[cardID] = card;
+                Traverse.Create(Globals.Instance).Field("_Cards").SetValue(allCards);
+                Traverse.Create(Globals.Instance).Field("_CardsSource").SetValue(allCardsSource);
+                Plugin.LogDebug($"Made {cardID} epic");
             }
         }
     }

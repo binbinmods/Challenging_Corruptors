@@ -1,3 +1,7 @@
+# 1.2.1
+
+Updated Upwind to be an Extreme corruptor if All Extreme is chosen.
+
 # 1.2.0
 
 Added Upwind option
