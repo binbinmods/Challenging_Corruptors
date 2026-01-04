@@ -1,3 +1,7 @@
+# 1.2.2
+
+Changed default to All Extreme rather than Winds of Amnesia.
+
 # 1.2.1
 
 Updated Upwind to be an Extreme corruptor if All Extreme is chosen.
