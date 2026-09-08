@@ -1,3 +1,7 @@
+# 1.3.0
+
+Update for AtO v1.7.6.3+
+
 # 1.2.2
 
 Changed default to All Extreme rather than Winds of Amnesia.

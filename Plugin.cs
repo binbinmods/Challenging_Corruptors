@@ -3,7 +3,10 @@ using BepInEx.Configuration;
 using BepInEx.Logging;
 using HarmonyLib;
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.Reflection;
+using System.Runtime.CompilerServices;
 
 namespace Challenging_Corruptors
 {
@@ -52,21 +55,28 @@ namespace Challenging_Corruptors
                 harmony.PatchAll();
             }
         }
-        internal static void LogDebug(string msg)
+        internal static void LogDebug(string msg, [CallerMemberName] string caller = "")
         {
             if (EnableDebugging.Value)
             {
-                Log.LogDebug(debugBase + msg);
+                Log.LogDebug($"{debugBase}- {caller} - {msg}");
             }
-
         }
         internal static void LogInfo(string msg)
         {
             Log.LogInfo(debugBase + msg);
         }
-        internal static void LogError(string msg)
+        internal static void LogError(string msg, [CallerMemberName] string caller = "")
         {
-            Log.LogError(debugBase + msg);
+            Log.LogError($"{debugBase}- {caller} - {msg}");
+        }
+
+        public static IEnumerator RunAfter(IEnumerator original, Action action)
+        {
+            while (original.MoveNext())
+                yield return original.Current;
+            // The original enumerator has finished. _NPCsSource is set now.
+            action();
         }
     }
 
@@ -78,7 +88,13 @@ namespace Challenging_Corruptors
         public static List<string> medsCorruptors = new();
 
         [HarmonyPostfix]
-        [HarmonyPatch(typeof(Globals), "CreateGameContent")]
+        [HarmonyPatch(typeof(Globals), "CreateGameContentRoutine")]
+        public static void CreateGameContentRoutinePrefix(ref IEnumerator __result)
+        {
+            Plugin.LogDebug("Creating game content routine");
+            __result = Plugin.RunAfter(__result, CreateGameContentPostfix);
+        }
+
         public static void CreateGameContentPostfix()
         {
             medsCorruptors = Globals.Instance.CardListByType[Enums.CardType.Corruption];
@@ -87,6 +103,7 @@ namespace Challenging_Corruptors
 
         public static void UpdateChallengeCorruptors()
         {
+            Plugin.LogDebug("Updating challenge corruptors");
             Globals.Instance.CardListByType[Enums.CardType.Corruption] = new();
             if (Plugin.medsMinimumCorruptor.Value == 5)
             {
@@ -96,8 +113,8 @@ namespace Challenging_Corruptors
             {
                 foreach (string cor in medsCorruptors)
                 {
-                    CardData card = Globals.Instance.GetCardData(cor);
-                    if (card != (CardData)null && ((card.CardRarity == Enums.CardRarity.Common && Plugin.medsMinimumCorruptor.Value == 1) || (card.CardRarity == Enums.CardRarity.Uncommon && Plugin.medsMinimumCorruptor.Value <= 2) || (card.CardRarity == Enums.CardRarity.Rare && Plugin.medsMinimumCorruptor.Value <= 3) || (card.CardRarity == Enums.CardRarity.Epic)))
+                    Cards.CardRealtimeData card = Globals.Instance.GetCardData(cor);
+                    if (card != (Cards.CardRealtimeData)null && ((card.CardRarity == Enums.CardRarity.Common && Plugin.medsMinimumCorruptor.Value == 1) || (card.CardRarity == Enums.CardRarity.Uncommon && Plugin.medsMinimumCorruptor.Value <= 2) || (card.CardRarity == Enums.CardRarity.Rare && Plugin.medsMinimumCorruptor.Value <= 3) || (card.CardRarity == Enums.CardRarity.Epic)))
                         Globals.Instance.CardListByType[Enums.CardType.Corruption].Add(cor);
                 }
 
@@ -133,18 +150,47 @@ namespace Challenging_Corruptors
 
         public static void MakeCardEpic(string cardID)
         {
-            CardData card = Globals.Instance.GetCardData(cardID);
-            Dictionary<string, CardData> allCards = Traverse.Create(Globals.Instance).Field("_Cards").GetValue<Dictionary<string, CardData>>();
-            Dictionary<string, CardData> allCardsSource = Traverse.Create(Globals.Instance).Field("_CardsSource").GetValue<Dictionary<string, CardData>>();
-            if (card != (CardData)null)
+            Cards.CardRealtimeData card = Globals.Instance.GetCardData(cardID);
+            Dictionary<string, Cards.CardRealtimeData> allCards = Traverse.Create(Globals.Instance).Field("_Cards").GetValue<Dictionary<string, Cards.CardRealtimeData>>();
+            Dictionary<string, CardDataNew> allCardsSource = Traverse.Create(Globals.Instance).Field("_CardsSource").GetValue<Dictionary<string, CardDataNew>>();
+            Cards.CardRealtimeData newCardRealtime = CloneWithRarity(card, Enums.CardRarity.Epic);
+            CardDataNew newCard = allCardsSource.TryGetValue(cardID, out CardDataNew cardData) ? cardData : null;
+
+            if (newCardRealtime != (Cards.CardRealtimeData)null)
             {
-                card.CardRarity = Enums.CardRarity.Epic;
-                allCards[cardID] = card;
-                allCardsSource[cardID] = card;
+                allCards[cardID] = newCardRealtime;
+                // allCardsSource[cardID] = newCardRealtime;
                 Traverse.Create(Globals.Instance).Field("_Cards").SetValue(allCards);
                 Traverse.Create(Globals.Instance).Field("_CardsSource").SetValue(allCardsSource);
-                Plugin.LogDebug($"Made {cardID} epic");
+                Plugin.LogDebug($"Made Realtime {cardID} epic");
             }
+
+            if (newCard != (CardDataNew)null)
+            {
+                Traverse.Create(newCard).Field("cardRarity").SetValue(Enums.CardRarity.Epic);
+                allCardsSource[cardID] = newCard;
+                Traverse.Create(Globals.Instance).Field("_CardsSource").SetValue(allCardsSource);
+                Plugin.LogDebug($"Made New {cardID} epic");
+            }
+        }
+
+
+
+        public static Cards.CardRealtimeData CloneWithRarity(Cards.CardRealtimeData card, Enums.CardRarity newRarity)
+        {
+            var cloneMethod = typeof(Cards.CardRealtimeData).GetMethod(
+                "MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic);
+
+            var newCard = (Cards.CardRealtimeData)cloneMethod.Invoke(card, null);
+            var field = typeof(Cards.CardRealtimeData).GetField(
+                "<CardRarity>k__BackingField", BindingFlags.Instance | BindingFlags.NonPublic);
+
+            if (field == null)
+                throw new InvalidOperationException("Could not find backing field for CardRarity — check the actual field name.");
+
+            field.SetValue(newCard, newRarity);
+
+            return newCard;
         }
     }
 }
